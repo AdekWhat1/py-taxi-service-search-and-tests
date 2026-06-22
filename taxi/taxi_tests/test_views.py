@@ -26,6 +26,7 @@ class SearchViewTests(TestCase):
         self.user = get_user_model().objects.create_user(
             username="driver",
             password="driver123",
+            license_number="AAA11111"
         )
         self.client.force_login(self.user)
 
@@ -40,11 +41,11 @@ class SearchViewTests(TestCase):
 
         self.car1 = Car.objects.create(
             model="Model S",
-            manufacturer=self.m1,
+            manufacturer=self.m2,
         )
         self.car2 = Car.objects.create(
             model="Camry",
-            manufacturer=self.m2,
+            manufacturer=self.m1,
         )
 
     def test_manufacturer_search(self):
@@ -56,8 +57,19 @@ class SearchViewTests(TestCase):
     def test_car_search(self):
         url = reverse("taxi:car-list")
         response = self.client.get(url, {"model": "Model"})
-        self.assertContains(response, self.m1.name)
-        self.assertNotContains(response, self.m2.name)
+        self.assertContains(response, self.car1.model)
+        self.assertNotContains(response, self.car2.model)
+
+    def test_driver_search(self):
+        url = reverse("taxi:driver-list")
+        get_user_model().objects.create_user(
+            username="john",
+            password="password123",
+            license_number="BBB22222",  # ІНША ліцензія!
+        )
+        response = self.client.get(url, {"username": "driver"})
+        self.assertContains(response, self.user.username)
+        self.assertNotContains(response, "john")
 
 
 class ToggleAssignmentTests(TestCase):
